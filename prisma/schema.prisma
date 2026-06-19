@@ -1,0 +1,241 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(50)
+  code        String   @unique @db.VarChar(50)
+  permissions String[]
+  description String?  @db.Text
+  users       User[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique @db.VarChar(50)
+  passwordHash  String   @db.VarChar(255)
+  name          String   @db.VarChar(100)
+  role          String   @db.VarChar(20)
+  roleId        Int?
+  roleRef       Role?    @relation("RoleUsers", fields: [roleId], references: [id])
+  permissions   String[]
+  isActive      Boolean  @default(true)
+  avatarUrl     String?  @db.VarChar(255)
+  customers     Customer[] @relation("CustomerCreator")
+  consultations Consultation[] @relation("Consultant")
+  surgeries     Surgery[] @relation("Surgeon")
+  postOpVisits  PostOpVisit[] @relation("VisitRecorder")
+  complications Complication[] @relation("ComplicationRecorder")
+  medicineBatches MedicineBatch[] @relation("BatchReceiver")
+  traceCodes    TraceCode[] @relation("TraceCodeUser")
+  witnessedConsents ConsentForm[] @relation("Witness")
+  uploadedPhotos Photo[] @relation("PhotoUploader")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Customer {
+  id             Int      @id @default(autoincrement())
+  name           String   @db.VarChar(100)
+  gender         String   @db.VarChar(10)
+  phone          String   @db.VarChar(20)
+  idCard         String?  @db.VarChar(18)
+  birthday       DateTime?
+  contactAddress String?  @db.Text
+  createdBy      Int
+  creator        User     @relation("CustomerCreator", fields: [createdBy], references: [id])
+  consultation   Consultation?
+  photos         Photo[]
+  surgeries      Surgery[]
+  supplies       Supply[]
+  traceCodes     TraceCode[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([phone])
+  @@index([name])
+}
+
+model Consultation {
+  id                 Int      @id @default(autoincrement())
+  customerId         Int      @unique
+  customer           Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  targetAreas        String[]
+  budgetRange        String   @db.VarChar(50)
+  medicalHistory     String   @db.Text
+  consultationNotes  String?  @db.Text
+  consultantId       Int
+  consultant         User     @relation("Consultant", fields: [consultantId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([customerId])
+}
+
+model Photo {
+  id             Int          @id @default(autoincrement())
+  customerId     Int
+  customer       Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type           String       @db.VarChar(20)
+  angle          String?      @db.VarChar(20)
+  url            String       @db.VarChar(255)
+  thumbnailUrl   String       @db.VarChar(255)
+  uploadedBy     Int
+  uploader       User         @relation("PhotoUploader", fields: [uploadedBy], references: [id])
+  postOpVisitId  Int?
+  postOpVisit    PostOpVisit? @relation(fields: [postOpVisitId], references: [id])
+  createdAt      DateTime     @default(now())
+
+  @@index([customerId])
+}
+
+model Surgery {
+  id              Int            @id @default(autoincrement())
+  customerId      Int
+  customer        Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  surgeryDate     DateTime
+  surgeonId       Int
+  surgeon         User           @relation("Surgeon", fields: [surgeonId], references: [id])
+  anesthesiaType  String         @db.VarChar(10)
+  surgeryName     String         @db.VarChar(200)
+  status          String         @default("scheduled") @db.VarChar(20)
+  operationNotes  String?        @db.Text
+  consentForm     ConsentForm?
+  supplies        Supply[]
+  postOpVisits    PostOpVisit[]
+  complications   Complication[]
+  traceCodes      TraceCode[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([customerId])
+  @@index([surgeryDate])
+}
+
+model ConsentForm {
+  id         Int       @id @default(autoincrement())
+  surgeryId  Int       @unique
+  surgery    Surgery   @relation(fields: [surgeryId], references: [id], onDelete: Cascade)
+  templateId Int?
+  content    String    @db.Text
+  signature  String?   @db.Text
+  signedBy   String?   @db.VarChar(100)
+  signedAt   DateTime?
+  witnessId  Int?
+  witness    User?     @relation("Witness", fields: [witnessId], references: [id])
+  createdAt  DateTime  @default(now())
+}
+
+model Supply {
+  id          Int      @id @default(autoincrement())
+  surgeryId   Int?
+  surgery     Surgery? @relation(fields: [surgeryId], references: [id])
+  name        String   @db.VarChar(200)
+  brand       String   @db.VarChar(100)
+  batchNumber String   @db.VarChar(100)
+  expiryDate  DateTime
+  type        String   @db.VarChar(20)
+  isImplant   Boolean  @default(false)
+  traceCode   String?  @db.VarChar(100)
+  customerId  Int?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  usedAt      DateTime @default(now())
+
+  @@index([customerId])
+  @@index([traceCode])
+}
+
+model PostOpVisit {
+  id                 Int       @id @default(autoincrement())
+  surgeryId          Int
+  surgery            Surgery   @relation(fields: [surgeryId], references: [id], onDelete: Cascade)
+  visitDate          DateTime
+  swellingLevel      Int
+  painLevel          Int
+  bruisingLevel      Int
+  sutureRemovalDate  DateTime?
+  notes              String?   @db.Text
+  recordedBy         Int
+  recorder           User      @relation("VisitRecorder", fields: [recordedBy], references: [id])
+  photos             Photo[]
+  createdAt          DateTime  @default(now())
+
+  @@index([surgeryId])
+}
+
+model Complication {
+  id          Int      @id @default(autoincrement())
+  surgeryId   Int
+  surgery     Surgery  @relation(fields: [surgeryId], references: [id], onDelete: Cascade)
+  category    String   @db.VarChar(100)
+  description String   @db.Text
+  treatment   String?  @db.Text
+  occurredAt  DateTime
+  resolvedAt  DateTime?
+  recordedBy  Int
+  recorder    User     @relation("ComplicationRecorder", fields: [recordedBy], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([surgeryId])
+}
+
+model Medicine {
+  id             Int             @id @default(autoincrement())
+  name           String          @db.VarChar(200)
+  category       String          @db.VarChar(20)
+  manufacturer   String          @db.VarChar(200)
+  specifications String          @db.VarChar(100)
+  stock          Int             @default(0)
+  unit           String          @db.VarChar(20)
+  batches        MedicineBatch[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model MedicineBatch {
+  id          Int         @id @default(autoincrement())
+  medicineId  Int
+  medicine    Medicine    @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+  batchNumber String      @db.VarChar(100)
+  expiryDate  DateTime
+  quantity    Int
+  receivedDate DateTime
+  receivedBy  Int
+  receiver    User        @relation("BatchReceiver", fields: [receivedBy], references: [id])
+  traceCodes  TraceCode[]
+  createdAt   DateTime    @default(now())
+
+  @@index([medicineId])
+  @@index([expiryDate])
+}
+
+model TraceCode {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique @db.VarChar(100)
+  batchId    Int
+  batch      MedicineBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  status     String    @default("in_stock") @db.VarChar(20)
+  usedBy     Int?
+  user       User?     @relation("TraceCodeUser", fields: [usedBy], references: [id])
+  usedAt     DateTime?
+  customerId Int?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  surgeryId  Int?
+  surgery    Surgery?  @relation(fields: [surgeryId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([code])
+  @@index([customerId])
+}

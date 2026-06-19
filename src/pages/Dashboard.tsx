@@ -1,0 +1,292 @@
+import { Card, Grid, Avatar, Tag, Table, Space, Progress } from '@arco-design/web-react';
+import { Users, Scissors, Calendar, DollarSign, TrendingUp, TrendingDown, Activity, Heart } from 'lucide-react';
+
+const { Row, Col } = Grid;
+
+const statCards = [
+  {
+    title: '今日客户',
+    value: '128',
+    change: '+12.5%',
+    trend: 'up',
+    icon: Users,
+    color: 'from-pink-400 to-rose-500',
+    bgColor: 'bg-pink-50',
+  },
+  {
+    title: '今日手术',
+    value: '24',
+    change: '+8.3%',
+    trend: 'up',
+    icon: Scissors,
+    color: 'from-blue-400 to-sky-500',
+    bgColor: 'bg-blue-50',
+  },
+  {
+    title: '本月预约',
+    value: '356',
+    change: '-2.1%',
+    trend: 'down',
+    icon: Calendar,
+    color: 'from-amber-400 to-yellow-500',
+    bgColor: 'bg-amber-50',
+  },
+  {
+    title: '今日营收',
+    value: '¥128,500',
+    change: '+18.7%',
+    trend: 'up',
+    icon: DollarSign,
+    color: 'from-emerald-400 to-green-500',
+    bgColor: 'bg-emerald-50',
+  },
+];
+
+const trendData = [
+  { date: '1月', customers: 1200, surgeries: 320, revenue: 156000 },
+  { date: '2月', customers: 1350, surgeries: 380, revenue: 189000 },
+  { date: '3月', customers: 1520, surgeries: 420, revenue: 215000 },
+  { date: '4月', customers: 1480, surgeries: 400, revenue: 198000 },
+  { date: '5月', customers: 1680, surgeries: 450, revenue: 245000 },
+  { date: '6月', customers: 1820, surgeries: 520, revenue: 286000 },
+];
+
+const pieData = [
+  { type: '双眼皮手术', value: 185, color: '#F472B6' },
+  { type: '隆鼻手术', value: 142, color: '#4A90D9' },
+  { type: '玻尿酸填充', value: 218, color: '#D4AF37' },
+  { type: '肉毒素注射', value: 167, color: '#10B981' },
+  { type: '吸脂塑形', value: 98, color: '#8B5CF6' },
+  { type: '其他项目', value: 68, color: '#64748B' },
+];
+
+const recentCustomers = [
+  { id: 1, name: '张女士', age: 28, project: '双眼皮手术', date: '2024-01-15', status: 'completed' },
+  { id: 2, name: '李女士', age: 35, project: '隆鼻手术', date: '2024-01-15', status: 'in_progress' },
+  { id: 3, name: '王女士', age: 42, project: '玻尿酸填充', date: '2024-01-14', status: 'scheduled' },
+  { id: 4, name: '陈女士', age: 31, project: '肉毒素注射', date: '2024-01-14', status: 'completed' },
+  { id: 5, name: '刘女士', age: 29, project: '吸脂塑形', date: '2024-01-13', status: 'cancelled' },
+];
+
+const getStatusTag = (status: string) => {
+  const statusMap: Record<string, { text: string; color: string }> = {
+    scheduled: { text: '已预约', color: 'blue' },
+    in_progress: { text: '进行中', color: 'gold' },
+    completed: { text: '已完成', color: 'green' },
+    cancelled: { text: '已取消', color: 'red' },
+  };
+  const s = statusMap[status] || { text: status, color: 'gray' };
+  return <Tag color={s.color}>{s.text}</Tag>;
+};
+
+const maxCustomers = Math.max(...trendData.map(d => d.customers));
+const maxSurgeries = Math.max(...trendData.map(d => d.surgeries));
+const totalPie = pieData.reduce((sum, item) => sum + item.value, 0);
+
+export default function Dashboard() {
+  const columns = [
+    {
+      title: '客户信息',
+      dataIndex: 'name',
+      render: (_: string, record: typeof recentCustomers[0]) => (
+        <Space>
+          <Avatar style={{ backgroundColor: '#F8B4D9' }} size={32}>
+            {record.name.charAt(0)}
+          </Avatar>
+          <div>
+            <div className="font-medium">{record.name}</div>
+            <div className="text-xs text-gray-500">{record.age}岁</div>
+          </div>
+        </Space>
+      ),
+    },
+    {
+      title: '手术项目',
+      dataIndex: 'project',
+    },
+    {
+      title: '日期',
+      dataIndex: 'date',
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      render: (status: string) => getStatusTag(status),
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">数据仪表盘</h1>
+        <p className="text-gray-500">欢迎回来，查看今日运营数据</p>
+      </div>
+
+      <Row gutter={[16, 16]} className="mb-6">
+        {statCards.map((card, index) => {
+          const Icon = card.icon;
+          return (
+            <Col span={24} sm={12} lg={6} key={index}>
+              <Card className="h-full hover:shadow-lg transition-shadow">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-gray-500 text-sm mb-1">{card.title}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
+                      {card.value}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      {card.trend === 'up' ? (
+                        <TrendingUp className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <TrendingDown className="w-4 h-4 text-red-500" />
+                      )}
+                      <span
+                        className={`text-sm font-medium ${
+                          card.trend === 'up' ? 'text-green-500' : 'text-red-500'
+                        }`}
+                      >
+                        {card.change}
+                      </span>
+                      <span className="text-xs text-gray-400 ml-1">较昨日</span>
+                    </div>
+                  </div>
+                  <div className={`p-3 rounded-xl ${card.bgColor}`}>
+                    <div
+                      className={`w-10 h-10 rounded-lg bg-gradient-to-br ${card.color} flex items-center justify-center shadow-md`}
+                    >
+                      <Icon className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </Col>
+          );
+        })}
+      </Row>
+
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col span={24} lg={16}>
+          <Card
+            title={
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-pink-500" />
+                <span>运营趋势</span>
+              </div>
+            }
+            extra={<Tag color="blue">近6个月</Tag>}
+            className="h-full"
+          >
+            <div className="space-y-6">
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-pink-400" />
+                    <span className="text-sm text-gray-600">客户数量</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-blue-400" />
+                    <span className="text-sm text-gray-600">手术数量</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {trendData.map((item, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500 w-12">{item.date}</span>
+                      <span className="text-gray-700 font-medium w-16 text-right">{item.customers} 人</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-pink-400 to-rose-500 rounded-full transition-all duration-500"
+                            style={{ width: `${(item.customers / maxCustomers) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 pl-12">
+                      <div className="flex-1">
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-blue-400 to-sky-500 rounded-full transition-all duration-500"
+                            style={{ width: `${(item.surgeries / maxSurgeries) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500 w-16 text-right">{item.surgeries} 台</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col span={24} lg={8}>
+          <Card
+            title={
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-rose-500" />
+                <span>项目分布</span>
+              </div>
+            }
+            className="h-full"
+          >
+            <div className="space-y-4">
+              {pieData.map((item, index) => {
+                const percentage = ((item.value / totalPie) * 100).toFixed(1);
+                return (
+                  <div key={index} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-gray-700">{item.type}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500">{item.value}</span>
+                        <span className="text-gray-400 text-xs">({percentage}%)</span>
+                      </div>
+                    </div>
+                    <Progress 
+                      percent={parseFloat(percentage)} 
+                      color={item.color}
+                      trailColor="#f3f4f6"
+                      size="small"
+                      showText={false}
+                    />
+                  </div>
+                );
+              })}
+              
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 text-sm">总手术量</span>
+                  <span className="text-xl font-bold text-gray-800">{totalPie}</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      <Card
+        title={
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-blue-500" />
+            <span>近期客户</span>
+          </div>
+        }
+        extra={<a className="text-pink-500 hover:text-pink-600 text-sm">查看全部</a>}
+      >
+        <Table
+          columns={columns}
+          data={recentCustomers}
+          pagination={false}
+          rowKey="id"
+        />
+      </Card>
+    </div>
+  );
+}

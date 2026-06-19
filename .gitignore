@@ -1,47 +1,25 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
-
-# Build output
-dist/
-build/
-
-# Environment
-.env
-.env.local
-.env.*.local
-
 # Logs
+logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Editor
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Testing
-coverage/
-.nyc_output/
-
-# TypeScript
-*.tsbuildinfo
-tsconfig.tsbuildinfo
-
-# OS files
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-
-# Uploads
-uploads/*
-!uploads/.gitkeep
-
-# Vite / CRA
+node_modules
+dist
+dist-ssr
 *.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vite
