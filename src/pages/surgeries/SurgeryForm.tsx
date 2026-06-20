@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Form, Input, Select, DatePicker, Radio, Button, Card, Space, Message, Steps, Grid } from '@arco-design/web-react';
 import { Scissors, User, Calendar, Syringe, FileText, Save, ArrowLeft, ArrowRight } from 'lucide-react';
-import { useLocation, useSearchParams } from 'react-router-dom';
-import { createSurgery, updateSurgery } from '@/services/surgeryService';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { createSurgery, updateSurgery, getSurgeryById } from '@/services/surgeryService';
 import type { Surgery, AnesthesiaType } from '../../../shared/types';
 
 const { Row, Col } = Grid;
@@ -28,14 +28,48 @@ interface SurgeryFormProps {
   onCancel?: () => void;
 }
 
-export default function SurgeryForm({ customerId, surgeryId, initialData, onSuccess, onCancel }: SurgeryFormProps) {
+export default function SurgeryForm({ customerId: propsCustomerId, surgeryId: propsSurgeryId, initialData, onSuccess, onCancel }: SurgeryFormProps) {
+  const navigate = useNavigate();
+  const params = useParams<{ id: string }>();
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
 
+  const surgeryId = propsSurgeryId ?? (params.id ? Number(params.id) : undefined);
+  const isEdit = !!surgeryId;
+
   useEffect(() => {
-    if (!surgeryId && !initialData) {
+    if (!surgeryId) return;
+    (async () => {
+      setLoading(true);
+      try {
+        const resp = await getSurgeryById(surgeryId);
+        if (resp.success && resp.data) {
+          const s = resp.data as Surgery;
+          form.setFieldsValue({
+            customerId: s.customerId,
+            surgeryDate: new Date(s.surgeryDate),
+            surgeonId: s.surgeonId,
+            anesthesiaType: s.anesthesiaType,
+            surgeryName: s.surgeryName,
+            status: s.status,
+            operationNotes: s.operationNotes,
+          });
+        } else {
+          Message.error('未找到手术记录');
+        }
+      } catch (err) {
+        Message.error('加载手术信息失败');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [surgeryId, form]);
+
+  useEffect(() => {
+    if (!isEdit && !initialData) {
       const dateParam = searchParams.get('date');
       if (dateParam) {
         const parsed = new Date(`${dateParam}T10:00:00`);
@@ -43,31 +77,46 @@ export default function SurgeryForm({ customerId, surgeryId, initialData, onSucc
           form.setFieldValue('surgeryDate', parsed);
         }
       }
+      if (propsCustomerId) {
+        form.setFieldValue('customerId', propsCustomerId);
+      }
+      if (!form.getFieldValue('status')) {
+        form.setFieldValue('status', 'scheduled');
+      }
+      if (!form.getFieldValue('anesthesiaType')) {
+        form.setFieldValue('anesthesiaType', 'local');
+      }
     }
-  }, [surgeryId, initialData, searchParams, form]);
+  }, [isEdit, initialData, searchParams, form, propsCustomerId]);
 
   const handleSubmit = async (values: any) => {
     setSubmitting(true);
     try {
       const data = {
         ...values,
-        surgeryDate: values.surgeryDate ? values.surgeryDate.toISOString() : undefined,
+        surgeryDate: values.surgeryDate ? new Date(values.surgeryDate).toISOString() : undefined,
       };
 
       let response;
       if (surgeryId) {
         response = await updateSurgery(surgeryId, data);
-      } else if (customerId) {
-        response = await createSurgery(customerId, data);
       } else {
-        Message.error('请选择客户');
-        setSubmitting(false);
-        return;
+        const cid = values.customerId ?? propsCustomerId;
+        if (!cid) {
+          Message.error('请选择客户');
+          setSubmitting(false);
+          return;
+        }
+        response = await createSurgery(Number(cid), data);
       }
 
       if (response.success) {
         Message.success(surgeryId ? '更新成功' : '创建成功');
-        onSuccess?.();
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          navigate('/surgeries');
+        }
       }
     } catch (error) {
       Message.error(surgeryId ? '更新失败' : '创建失败');
@@ -115,7 +164,7 @@ export default function SurgeryForm({ customerId, surgeryId, initialData, onSucc
                   type="number"
                   placeholder="请输入客户ID"
                   prefix={<User className="w-4 h-4 text-gray-400" />}
-                  disabled={!!customerId}
+                  disabled={!!propsCustomerId || isEdit}
                 />
               </Form.Item>
             </Col>
@@ -288,10 +337,10 @@ export default function SurgeryForm({ customerId, surgeryId, initialData, onSucc
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-              {surgeryId ? '编辑手术' : '新增手术'}
+              {isEdit ? '编辑手术' : '新增手术'}
             </h1>
             <p className="text-gray-500 text-sm">
-              {surgeryId ? '修改手术项目信息' : '录入新的手术项目信息'}
+              {isEdit ? '修改手术项目信息' : '录入新的手术项目信息'}
             </p>
           </div>
         </div>
@@ -303,19 +352,10 @@ export default function SurgeryForm({ customerId, surgeryId, initialData, onSucc
         </Steps>
       </div>
 
-      <Card className="max-w-4xl mx-auto">
+      <Card className="max-w-4xl mx-auto" loading={loading}>
         <Form
           form={form}
           layout="vertical"
-          initialValues={{
-            customerId: customerId || initialData?.customerId,
-            surgeryDate: initialData?.surgeryDate ? new Date(initialData.surgeryDate) : undefined,
-            surgeonId: initialData?.surgeonId,
-            anesthesiaType: (initialData?.anesthesiaType as AnesthesiaType) || 'local',
-            surgeryName: initialData?.surgeryName,
-            status: initialData?.status || 'scheduled',
-            operationNotes: initialData?.operationNotes,
-          }}
           onSubmit={handleSubmit}
         >
           {renderStepContent()}
@@ -327,9 +367,17 @@ export default function SurgeryForm({ customerId, surgeryId, initialData, onSucc
                   上一步
                 </Button>
               )}
-              {onCancel && (
-                <Button onClick={onCancel}>取消</Button>
-              )}
+              <Button
+                onClick={() => {
+                  if (onCancel) {
+                    onCancel();
+                  } else {
+                    navigate('/surgeries');
+                  }
+                }}
+              >
+                取消
+              </Button>
             </Space>
             <Space>
               {currentStep < steps.length - 1 && (

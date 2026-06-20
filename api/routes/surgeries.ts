@@ -33,6 +33,10 @@ router.put('/:id', requirePermission('surgery:update'), async (req: Request, res
   await updateSurgery(req, res);
 });
 
+router.patch('/:id/status', requirePermission('surgery:update'), async (req: Request, res: Response) => {
+  await updateSurgery(req, res);
+});
+
 router.delete('/:id', requirePermission('surgery:delete'), async (req: Request, res: Response) => {
   await deleteSurgery(req, res);
 });

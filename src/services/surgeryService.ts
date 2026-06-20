@@ -23,7 +23,7 @@ export const getSurgeriesByCustomerId = async (customerId: number): Promise<ApiR
 };
 
 export const createSurgery = async (customerId: number, data: Partial<Surgery>): Promise<ApiResponse<Surgery>> => {
-  return apiClient.post(`/customers/${customerId}/surgeries`, data);
+  return apiClient.post('/surgeries', { customerId, ...data });
 };
 
 export const updateSurgery = async (id: number, data: Partial<Surgery>): Promise<ApiResponse<Surgery>> => {
