@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Table, Input, Button, Space, Message, Tag, Popconfirm, Select, Checkbox } from '@arco-design/web-react';
 import { Search, Plus, Eye, Edit, Trash2, UserPlus, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -38,7 +38,7 @@ export default function CustomerList() {
       if (res.success && res.data) {
         setTags(res.data);
       }
-    } catch (_error) {
+    } catch {
       Message.error('获取标签列表失败');
     }
   };
@@ -47,7 +47,7 @@ export default function CustomerList() {
     fetchTags();
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const params: { page: number; pageSize: number; keyword?: string; tagIds?: string } = {
@@ -61,33 +61,30 @@ export default function CustomerList() {
         setData(res.data.list);
         setTotal(res.data.total);
       }
-    } catch (_error) {
+    } catch {
       Message.error('获取顾客列表失败');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, pageSize, keyword, selectedTagIds]);
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize]);
+  }, [fetchData]);
 
   const handleSearch = (value: string) => {
     setKeyword(value);
     setPage(1);
-    setTimeout(() => fetchData(), 0);
   };
 
   const handleTagFilterChange = (checkedValues: string[]) => {
     setSelectedTagIds(checkedValues.map((v) => Number(v)));
     setPage(1);
-    setTimeout(() => fetchData(), 0);
   };
 
   const handleClearTagFilter = () => {
     setSelectedTagIds([]);
     setPage(1);
-    setTimeout(() => fetchData(), 0);
   };
 
   const handleDelete = async (id: number) => {
@@ -97,7 +94,7 @@ export default function CustomerList() {
         Message.success('删除成功');
         fetchData();
       }
-    } catch (_error) {
+    } catch {
       Message.error('删除失败');
     }
   };

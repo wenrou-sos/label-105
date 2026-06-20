@@ -9,6 +9,7 @@ import CustomerForm from "@/pages/customers/CustomerForm";
 import CustomerDetail from "@/pages/customers/CustomerDetail";
 import ConsultationForm from "@/pages/customers/ConsultationForm";
 import PhotoUpload from "@/pages/customers/PhotoUpload";
+import TagManagement from "@/pages/customers/TagManagement";
 
 import SurgeryList from "@/pages/surgeries/SurgeryList";
 import SurgeryForm from "@/pages/surgeries/SurgeryForm";
@@ -41,6 +42,7 @@ export default function App() {
             
             <Route path="/customers">
               <Route index element={<CustomerList />} />
+              <Route path="tags" element={<TagManagement />} />
               <Route path="new" element={<CustomerForm />} />
               <Route path=":id" element={<CustomerDetail />} />
               <Route path=":id/edit" element={<CustomerForm />} />

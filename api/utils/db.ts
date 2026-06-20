@@ -46,9 +46,9 @@ const getSamplePhotoUrl = (type: string): string => {
 const initDb = async (): Promise<Database> => {
   const defaultPermissions: Record<UserRole, string[]> = {
     admin: ['*'],
-    consultant: ['customer:read', 'customer:create', 'customer:update', 'consultation:*', 'photo:upload', 'photo:view', 'photo:delete'],
-    doctor: ['customer:read', 'surgery:*', 'consent:*', 'supply:*', 'postop:*', 'photo:*'],
-    nurse: ['customer:read', 'medicine:*', 'supply:read', 'postop:create', 'postop:update', 'photo:upload', 'photo:view', 'photo:delete'],
+    consultant: ['customer:read', 'customer:create', 'customer:update', 'customer:tag', 'consultation:*', 'photo:upload', 'photo:view', 'photo:delete'],
+    doctor: ['customer:read', 'customer:tag', 'surgery:*', 'consent:*', 'supply:*', 'postop:*', 'photo:*'],
+    nurse: ['customer:read', 'customer:tag', 'medicine:*', 'supply:read', 'postop:create', 'postop:update', 'photo:upload', 'photo:view', 'photo:delete'],
   };
 
   const roles: Role[] = [

@@ -61,6 +61,12 @@ const menuItems: MenuItemConfig[] = [
         path: '/customers/new',
         permission: 'customer:create',
       },
+      {
+        key: 'customer-tags',
+        label: '标签管理',
+        path: '/customers/tags',
+        permission: 'customer:read',
+      },
     ],
   },
   {

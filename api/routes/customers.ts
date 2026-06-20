@@ -68,7 +68,7 @@ router.get('/:customerId/tags', requirePermission('customer:read'), async (req: 
   await getCustomerTags(req, res);
 });
 
-router.put('/:customerId/tags', requirePermission('customer:update'), async (req: Request, res: Response) => {
+router.put('/:customerId/tags', requirePermission('customer:tag'), async (req: Request, res: Response) => {
   await updateCustomerTags(req, res);
 });
 

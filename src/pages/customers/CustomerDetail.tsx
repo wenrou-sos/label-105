@@ -68,25 +68,28 @@ export default function CustomerDetail() {
     if (id) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [customerRes, consultationRes, photosRes] = await Promise.all([
+      const results = await Promise.allSettled([
         getCustomerById(Number(id)),
         getCustomerConsultation(Number(id)),
         getCustomerPhotos(Number(id)),
       ]);
 
-      if (customerRes.success && customerRes.data) {
-        setCustomer(customerRes.data);
+      const [customerResult, consultationResult, photosResult] = results;
+
+      if (customerResult.status === 'fulfilled' && customerResult.value.success && customerResult.value.data) {
+        setCustomer(customerResult.value.data);
       }
-      if (consultationRes.success && consultationRes.data) {
-        setConsultation(consultationRes.data);
+      if (consultationResult.status === 'fulfilled' && consultationResult.value.success && consultationResult.value.data) {
+        setConsultation(consultationResult.value.data);
       }
-      if (photosRes.success && photosRes.data) {
-        setPhotos(photosRes.data);
+      if (photosResult.status === 'fulfilled' && photosResult.value.success && photosResult.value.data) {
+        setPhotos(photosResult.value.data);
       }
     } catch (error) {
       console.error('获取数据失败:', error);
@@ -124,7 +127,7 @@ export default function CustomerDetail() {
         setTagEditorVisible(false);
         Message.success('标签更新成功');
       }
-    } catch (_error) {
+    } catch {
       Message.error('标签更新失败');
     } finally {
       setSavingTags(false);
