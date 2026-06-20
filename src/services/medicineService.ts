@@ -33,7 +33,7 @@ export const getMedicineBatches = async (medicineId: number): Promise<ApiRespons
 };
 
 export const createBatch = async (medicineId: number, data: Partial<MedicineBatch>): Promise<ApiResponse<MedicineBatch>> => {
-  return apiClient.post(`/medicines/${medicineId}/batches`, data);
+  return apiClient.post('/medicines/batches', { medicineId, ...data });
 };
 
 export const updateBatch = async (id: number, data: Partial<MedicineBatch>): Promise<ApiResponse<MedicineBatch>> => {

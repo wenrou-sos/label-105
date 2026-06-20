@@ -52,13 +52,19 @@ const LOW_STOCK_THRESHOLD = 10;
 const NEAR_EXPIRY_DAYS = 30;
 
 const computeExpiryStatus = (expiryDate: Date): { status: 'expired' | 'near' | 'normal'; daysLeft: number } => {
-  const expiry = new Date(expiryDate);
   const now = new Date();
   const msPerDay = 24 * 60 * 60 * 1000;
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const daysLeft = Math.ceil((expiry.getTime() - startOfDay.getTime()) / msPerDay);
+  const expiryStartOfDay = new Date(
+    expiryDate.getFullYear(),
+    expiryDate.getMonth(),
+    expiryDate.getDate()
+  );
+  const daysLeft = Math.ceil(
+    (expiryStartOfDay.getTime() - startOfDay.getTime()) / msPerDay
+  );
 
-  if (expiry.getTime() < now.getTime()) {
+  if (daysLeft < 0) {
     return { status: 'expired', daysLeft };
   }
   if (daysLeft <= NEAR_EXPIRY_DAYS) {
@@ -674,7 +680,9 @@ export const scanOutbound = async (req: AuthenticatedRequest, res: Response): Pr
       data: traceCode,
       message:
         expiryInfo.status === 'near'
-          ? `提示：批次 ${batch.batchNumber} 距过期仅剩 ${expiryInfo.daysLeft} 天`
+          ? expiryInfo.daysLeft === 0
+            ? `提示：批次 ${batch.batchNumber} 今日到期，请尽快使用`
+            : `提示：批次 ${batch.batchNumber} 距过期仅剩 ${expiryInfo.daysLeft} 天`
           : undefined,
     });
   } catch (error) {

@@ -23,12 +23,19 @@ export const getExpiryStatus = (expiryDate: Date | string | number): ExpiryStatu
   const now = new Date()
   const msPerDay = 24 * 60 * 60 * 1000
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const daysLeft = Math.ceil((expiry.getTime() - startOfDay.getTime()) / msPerDay)
+  const expiryStartOfDay = new Date(
+    expiry.getFullYear(),
+    expiry.getMonth(),
+    expiry.getDate()
+  )
+  const daysLeft = Math.ceil(
+    (expiryStartOfDay.getTime() - startOfDay.getTime()) / msPerDay
+  )
 
-  if (expiry.getTime() < now.getTime()) {
+  if (daysLeft < 0) {
     return {
       status: 'expired',
-      label: daysLeft < 0 ? `已过期 ${Math.abs(daysLeft)} 天` : '已过期',
+      label: `已过期 ${Math.abs(daysLeft)} 天`,
       color: 'red',
       daysLeft,
     }

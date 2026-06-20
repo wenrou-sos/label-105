@@ -293,6 +293,16 @@ const initDb = async (): Promise<Database> => {
       traceCodes: [],
     },
     {
+      id: 4,
+      medicineId: 1,
+      batchNumber: 'HL202606001',
+      expiryDate: new Date('2026-06-20'),
+      quantity: 5,
+      receivedDate: new Date('2024-06-01'),
+      receivedBy: 4,
+      traceCodes: [],
+    },
+    {
       id: 2,
       medicineId: 1,
       batchNumber: 'HL202604001',
@@ -318,6 +328,9 @@ const initDb = async (): Promise<Database> => {
     { id: 1, code: 'HL2025050010001', batchId: 1, status: 'in_stock', createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-01-15') },
     { id: 2, code: 'HL2025050010002', batchId: 1, status: 'in_stock', createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-01-15') },
     { id: 3, code: 'HL2025050010003', batchId: 1, status: 'used', usedBy: 3, usedAt: new Date('2024-03-10'), customerId: 3, createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-03-10') },
+    { id: 8, code: 'HL2026060010001', batchId: 4, status: 'in_stock', createdAt: new Date('2024-06-01'), updatedAt: new Date('2024-06-01') },
+    { id: 9, code: 'HL2026060010002', batchId: 4, status: 'in_stock', createdAt: new Date('2024-06-01'), updatedAt: new Date('2024-06-01') },
+    { id: 10, code: 'HL2026060010003', batchId: 4, status: 'in_stock', createdAt: new Date('2024-06-01'), updatedAt: new Date('2024-06-01') },
     { id: 4, code: 'HL2026040010001', batchId: 2, status: 'in_stock', createdAt: new Date('2024-04-10'), updatedAt: new Date('2024-04-10') },
     { id: 5, code: 'HL2026040010002', batchId: 2, status: 'in_stock', createdAt: new Date('2024-04-10'), updatedAt: new Date('2024-04-10') },
     { id: 6, code: 'HL2026040010003', batchId: 2, status: 'in_stock', createdAt: new Date('2024-04-10'), updatedAt: new Date('2024-04-10') },
@@ -325,8 +338,9 @@ const initDb = async (): Promise<Database> => {
   ];
 
   medicineBatches[0].traceCodes = traceCodes.filter(t => t.batchId === 1);
-  medicineBatches[1].traceCodes = traceCodes.filter(t => t.batchId === 2);
-  medicineBatches[2].traceCodes = traceCodes.filter(t => t.batchId === 3);
+  medicineBatches[1].traceCodes = traceCodes.filter(t => t.batchId === 4);
+  medicineBatches[2].traceCodes = traceCodes.filter(t => t.batchId === 2);
+  medicineBatches[3].traceCodes = traceCodes.filter(t => t.batchId === 3);
 
   customers[0].consultation = consultations[0];
   customers[0].photos = photos.filter(p => p.customerId === 1);
@@ -366,8 +380,8 @@ const initDb = async (): Promise<Database> => {
       postOpVisits: 2,
       complications: 0,
       medicines: 5,
-      medicineBatches: 3,
-      traceCodes: 7,
+      medicineBatches: 4,
+      traceCodes: 10,
     },
   };
 };
