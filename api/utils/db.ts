@@ -274,7 +274,7 @@ const initDb = async (): Promise<Database> => {
   const complications: Complication[] = [];
 
   const medicines: Medicine[] = [
-    { id: 1, name: '衡力肉毒素', category: 'botulinum', manufacturer: '兰州衡力', specifications: '100U/支', stock: 50, unit: '支', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
+    { id: 1, name: '衡力肉毒素', category: 'botulinum', manufacturer: '兰州衡力', specifications: '100U/支', stock: 5, unit: '支', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
     { id: 2, name: '保妥适肉毒素', category: 'botulinum', manufacturer: '美国艾尔建', specifications: '100U/支', stock: 30, unit: '支', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
     { id: 3, name: '乔雅登玻尿酸', category: 'hyaluronic', manufacturer: '美国艾尔建', specifications: '1ml/支', stock: 40, unit: '支', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
     { id: 4, name: '润百颜玻尿酸', category: 'hyaluronic', manufacturer: '华熙生物', specifications: '1ml/支', stock: 60, unit: '支', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
@@ -285,18 +285,28 @@ const initDb = async (): Promise<Database> => {
     {
       id: 1,
       medicineId: 1,
-      batchNumber: 'HL202401001',
-      expiryDate: new Date('2025-06-30'),
-      quantity: 50,
+      batchNumber: 'HL202505001',
+      expiryDate: new Date('2026-05-15'),
+      quantity: 2,
       receivedDate: new Date('2024-01-15'),
       receivedBy: 4,
       traceCodes: [],
     },
     {
       id: 2,
+      medicineId: 1,
+      batchNumber: 'HL202604001',
+      expiryDate: new Date('2026-07-10'),
+      quantity: 3,
+      receivedDate: new Date('2024-04-10'),
+      receivedBy: 4,
+      traceCodes: [],
+    },
+    {
+      id: 3,
       medicineId: 3,
-      batchNumber: 'QYD202402001',
-      expiryDate: new Date('2025-12-31'),
+      batchNumber: 'QYD202603001',
+      expiryDate: new Date('2028-03-31'),
       quantity: 40,
       receivedDate: new Date('2024-02-10'),
       receivedBy: 4,
@@ -305,14 +315,18 @@ const initDb = async (): Promise<Database> => {
   ];
 
   const traceCodes: TraceCode[] = [
-    { id: 1, code: 'HL2024010010001', batchId: 1, status: 'in_stock', createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-01-15') },
-    { id: 2, code: 'HL2024010010002', batchId: 1, status: 'in_stock', createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-01-15') },
-    { id: 3, code: 'HL2024010010003', batchId: 1, status: 'used', usedBy: 3, usedAt: new Date('2024-03-10'), customerId: 3, createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-03-10') },
-    { id: 4, code: 'QYD2024020010001', batchId: 2, status: 'in_stock', createdAt: new Date('2024-02-10'), updatedAt: new Date('2024-02-10') },
+    { id: 1, code: 'HL2025050010001', batchId: 1, status: 'in_stock', createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-01-15') },
+    { id: 2, code: 'HL2025050010002', batchId: 1, status: 'in_stock', createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-01-15') },
+    { id: 3, code: 'HL2025050010003', batchId: 1, status: 'used', usedBy: 3, usedAt: new Date('2024-03-10'), customerId: 3, createdAt: new Date('2024-01-15'), updatedAt: new Date('2024-03-10') },
+    { id: 4, code: 'HL2026040010001', batchId: 2, status: 'in_stock', createdAt: new Date('2024-04-10'), updatedAt: new Date('2024-04-10') },
+    { id: 5, code: 'HL2026040010002', batchId: 2, status: 'in_stock', createdAt: new Date('2024-04-10'), updatedAt: new Date('2024-04-10') },
+    { id: 6, code: 'HL2026040010003', batchId: 2, status: 'in_stock', createdAt: new Date('2024-04-10'), updatedAt: new Date('2024-04-10') },
+    { id: 7, code: 'QYD2026030010001', batchId: 3, status: 'in_stock', createdAt: new Date('2024-02-10'), updatedAt: new Date('2024-02-10') },
   ];
 
   medicineBatches[0].traceCodes = traceCodes.filter(t => t.batchId === 1);
   medicineBatches[1].traceCodes = traceCodes.filter(t => t.batchId === 2);
+  medicineBatches[2].traceCodes = traceCodes.filter(t => t.batchId === 3);
 
   customers[0].consultation = consultations[0];
   customers[0].photos = photos.filter(p => p.customerId === 1);
@@ -352,8 +366,8 @@ const initDb = async (): Promise<Database> => {
       postOpVisits: 2,
       complications: 0,
       medicines: 5,
-      medicineBatches: 2,
-      traceCodes: 4,
+      medicineBatches: 3,
+      traceCodes: 7,
     },
   };
 };

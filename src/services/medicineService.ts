@@ -57,7 +57,7 @@ export const updateTraceCodeStatus = async (id: number, status: string, data?: P
 };
 
 export const getTraceCodeByCode = async (code: string): Promise<ApiResponse<TraceCode>> => {
-  return apiClient.get(`/trace-codes/search`, { params: { code } });
+  return apiClient.get(`/medicines/trace-codes/${encodeURIComponent(code)}`);
 };
 
 export const getLowStockMedicines = async (): Promise<ApiResponse<Medicine[]>> => {
@@ -69,9 +69,9 @@ export const getExpiringMedicines = async (days?: number): Promise<ApiResponse<M
 };
 
 export const scanInbound = async (code: string, batchId: number): Promise<ApiResponse<TraceCode>> => {
-  return apiClient.post('/medicines/scan-inbound', { code, batchId });
+  return apiClient.post('/medicines/scan/inbound', { code, batchId });
 };
 
 export const scanOutbound = async (code: string, customerId: number, surgeryId?: number): Promise<ApiResponse<TraceCode>> => {
-  return apiClient.post('/medicines/scan-outbound', { code, customerId, surgeryId });
+  return apiClient.post('/medicines/scan/outbound', { code, customerId, surgeryId });
 };

@@ -361,19 +361,19 @@ export default function MedicineList() {
             />
             <Button
               icon={<ArrowDownToLine className="w-4 h-4" />}
-              onClick={() => navigate('/medicines/scan-inbound')}
+              onClick={() => navigate('/medicines/scan/inbound')}
             >
               扫码入库
             </Button>
             <Button
               icon={<ArrowUpFromLine className="w-4 h-4" />}
-              onClick={() => navigate('/medicines/scan-outbound')}
+              onClick={() => navigate('/medicines/scan/outbound')}
             >
               扫码出库
             </Button>
             <Button
               icon={<SearchIcon className="w-4 h-4" />}
-              onClick={() => navigate('/medicines/trace-query')}
+              onClick={() => navigate('/medicines/trace')}
             >
               溯源查询
             </Button>
