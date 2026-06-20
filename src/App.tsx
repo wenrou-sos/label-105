@@ -58,6 +58,10 @@ export default function App() {
             
             <Route path="/postoperative">
               <Route index element={<PostOpList />} />
+              <Route path="visit/new" element={<VisitForm />} />
+              <Route path="visit/:id/edit" element={<VisitForm />} />
+              <Route path="complications" element={<ComplicationForm />} />
+              <Route path="photo-compare" element={<PhotoCompare />} />
               <Route path=":surgeryId/visit" element={<VisitForm />} />
               <Route path=":surgeryId/visit/:id" element={<VisitForm />} />
               <Route path=":surgeryId/complication" element={<ComplicationForm />} />

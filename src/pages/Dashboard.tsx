@@ -1,7 +1,26 @@
+import { useEffect, useState } from 'react';
 import { Card, Grid, Avatar, Tag, Table, Space, Progress } from '@arco-design/web-react';
-import { Users, Scissors, Calendar, DollarSign, TrendingUp, TrendingDown, Activity, Heart } from 'lucide-react';
+import { Users, Scissors, Calendar, DollarSign, TrendingUp, TrendingDown, Activity, Heart, AlertTriangle, CheckCircle, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getLowStockMedicines, getExpiringMedicines } from '@/services/medicineService.ts';
+import type { Medicine, MedicineBatch } from '../../shared/types.ts';
+import { getExpiryStatus } from '@/lib/utils.ts';
+import { usePermission } from '@/hooks/usePermission.ts';
 
 const { Row, Col } = Grid;
+
+interface LowStockItem extends Medicine {
+  lowStock?: boolean;
+  threshold?: number;
+}
+
+interface ExpiringBatch extends MedicineBatch {
+  medicineName?: string;
+  medicineSpecifications?: string;
+  unit?: string;
+  expiryStatus?: 'expired' | 'near' | 'normal';
+  daysLeft?: number;
+}
 
 const statCards = [
   {
@@ -84,6 +103,33 @@ const maxSurgeries = Math.max(...trendData.map(d => d.surgeries));
 const totalPie = pieData.reduce((sum, item) => sum + item.value, 0);
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { canAccess } = usePermission();
+  const canViewMeds = canAccess({ permission: 'medicine:read' });
+  const [lowStock, setLowStock] = useState<LowStockItem[]>([]);
+  const [expiring, setExpiring] = useState<ExpiringBatch[]>([]);
+  const [alertLoading, setAlertLoading] = useState(false);
+
+  useEffect(() => {
+    if (!canViewMeds) return;
+    const fetchAlerts = async () => {
+      setAlertLoading(true);
+      try {
+        const [lowRes, expRes] = await Promise.all([
+          getLowStockMedicines(),
+          getExpiringMedicines(30),
+        ]);
+        setLowStock((lowRes.data ?? []) as LowStockItem[]);
+        setExpiring((expRes.data ?? []) as ExpiringBatch[]);
+      } catch {
+        // 无权限或请求失败时静默处理
+      } finally {
+        setAlertLoading(false);
+      }
+    };
+    fetchAlerts();
+  }, [canViewMeds]);
+
   const columns = [
     {
       title: '客户信息',
@@ -163,6 +209,112 @@ export default function Dashboard() {
           );
         })}
       </Row>
+
+      {canViewMeds && (
+        <Card
+          loading={alertLoading}
+          className="mb-6"
+          title={
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <span>药品预警</span>
+              {lowStock.length + expiring.length > 0 && (
+                <Tag color="red">{lowStock.length + expiring.length} 项需关注</Tag>
+              )}
+            </div>
+          }
+          extra={
+            <a
+              className="text-pink-500 hover:text-pink-600 text-sm cursor-pointer"
+              onClick={() => navigate('/medicines')}
+            >
+              查看药品管理
+            </a>
+          }
+        >
+          {lowStock.length === 0 && expiring.length === 0 ? (
+            <div className="text-center py-6 text-gray-400">
+              <CheckCircle className="w-10 h-10 mx-auto mb-2 text-green-400" />
+              <p>暂无库存与效期预警，库存状况良好</p>
+            </div>
+          ) : (
+            <Row gutter={24}>
+              <Col span={24} md={12}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1.5 h-5 bg-orange-400 rounded" />
+                  <span className="font-medium text-gray-700">低库存药品</span>
+                  <Tag color="orange">{lowStock.length}</Tag>
+                </div>
+                {lowStock.length === 0 ? (
+                  <div className="text-sm text-gray-400 py-4">暂无低库存药品</div>
+                ) : (
+                  <div className="space-y-2">
+                    {lowStock.slice(0, 5).map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center justify-between p-2.5 rounded-lg bg-orange-50"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Package className="w-4 h-4 text-orange-500 shrink-0" />
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-gray-800 truncate">
+                              {m.name}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {m.specifications} · {m.manufacturer}
+                            </div>
+                          </div>
+                        </div>
+                        <Tag color="red">仅剩 {m.stock} {m.unit}</Tag>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Col>
+              <Col span={24} md={12}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-1.5 h-5 bg-red-400 rounded" />
+                  <span className="font-medium text-gray-700">近效期 / 已过期批次</span>
+                  <Tag color="red">{expiring.length}</Tag>
+                </div>
+                {expiring.length === 0 ? (
+                  <div className="text-sm text-gray-400 py-4">暂无临期批次</div>
+                ) : (
+                  <div className="space-y-2">
+                    {expiring.slice(0, 5).map((b) => {
+                      const info = getExpiryStatus(b.expiryDate);
+                      return (
+                        <div
+                          key={b.id}
+                          className="flex items-center justify-between p-2.5 rounded-lg bg-red-50"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Calendar
+                              className={`w-4 h-4 shrink-0 ${
+                                info.status === 'expired' ? 'text-red-500' : 'text-orange-500'
+                              }`}
+                            />
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-800 truncate">
+                                {b.medicineName}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                批次 {b.batchNumber} · 有效期至{' '}
+                                {new Date(b.expiryDate).toLocaleDateString('zh-CN')}
+                              </div>
+                            </div>
+                          </div>
+                          <Tag color={info.color}>{info.label}</Tag>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Col>
+            </Row>
+          )}
+        </Card>
+      )}
 
       <Row gutter={[16, 16]} className="mb-6">
         <Col span={24} lg={16}>

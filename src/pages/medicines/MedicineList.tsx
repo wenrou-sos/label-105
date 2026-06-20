@@ -31,8 +31,10 @@ import {
   deleteMedicine,
   getLowStockMedicines,
   getExpiringMedicines,
+  getMedicineBatches,
 } from '@/services/medicineService.ts';
-import type { Medicine, MedicineCategory } from '../../../shared/types.ts';
+import type { Medicine, MedicineBatch, MedicineCategory } from '../../../shared/types.ts';
+import { getExpiryStatus, isLowStock } from '@/lib/utils.ts';
 
 const { Row, Col } = Grid;
 const { Search: SearchInput } = Input;
@@ -52,6 +54,7 @@ export default function MedicineList() {
   const [activeCategory, setActiveCategory] = useState<MedicineCategory | 'all'>('all');
   const [keyword, setKeyword] = useState('');
   const [stats, setStats] = useState({ lowStock: 0, expiring: 0, total: 0 });
+  const [batchMap, setBatchMap] = useState<Record<number, MedicineBatch[]>>({});
 
   useEffect(() => {
     fetchStats();
@@ -74,6 +77,17 @@ export default function MedicineList() {
       });
     } catch (error) {
       console.error('获取统计数据失败');
+    }
+  };
+
+  const fetchBatches = async (medicineId: number) => {
+    try {
+      const res = await getMedicineBatches(medicineId);
+      if (res.success && res.data) {
+        setBatchMap((prev) => ({ ...prev, [medicineId]: res.data as MedicineBatch[] }));
+      }
+    } catch {
+      console.error('获取批次列表失败');
     }
   };
 
@@ -171,15 +185,16 @@ export default function MedicineList() {
         dataIndex: 'stock',
         render: (stock: number, record: Medicine) => (
           <Space>
-            <Badge status={stock < 10 ? 'warning' : 'success'} />
-            <span className={stock < 10 ? 'text-orange-500 font-medium' : ''}>
+            <Badge status={isLowStock(stock) ? 'warning' : 'success'} />
+            <span className={isLowStock(stock) ? 'text-orange-500 font-medium' : ''}>
               {stock} {record.unit}
             </span>
+            {isLowStock(stock) && <Tag color="orange">低库存</Tag>}
           </Space>
         ),
       },
     {
-      title: '操作',
+        title: '操作',
       dataIndex: 'id',
       render: (_: number, record: Medicine) => (
         <Space size={8}>
@@ -200,6 +215,83 @@ export default function MedicineList() {
       ),
     },
   ];
+
+  const batchColumns = [
+    {
+      title: '批次号',
+      dataIndex: 'batchNumber',
+      render: (text: string) => <span className="font-mono">{text}</span>,
+    },
+    {
+      title: '有效期',
+      dataIndex: 'expiryDate',
+      render: (expiryDate: string) => {
+        const info = getExpiryStatus(expiryDate);
+        return (
+          <Space>
+            <span
+              className={
+                info.status === 'expired'
+                  ? 'text-red-600 font-medium'
+                  : info.status === 'warning'
+                    ? 'text-orange-600 font-medium'
+                    : ''
+              }
+            >
+              {new Date(expiryDate).toLocaleDateString('zh-CN')}
+            </span>
+            <Tag color={info.color}>{info.label}</Tag>
+          </Space>
+        );
+      },
+    },
+    {
+      title: '批次库存',
+      dataIndex: 'quantity',
+      render: (qty: number) => <span>{qty}</span>,
+    },
+    {
+      title: '入库时间',
+      dataIndex: 'receivedDate',
+      render: (d: string) => new Date(d).toLocaleDateString('zh-CN'),
+    },
+    {
+      title: '验收人',
+      dataIndex: 'receivedByName',
+      render: (text?: string) => text || '-',
+    },
+  ];
+
+  const getBatchRowClassName = (record: MedicineBatch) => {
+    const info = getExpiryStatus(record.expiryDate);
+    if (info.status === 'expired') return 'bg-red-50';
+    if (info.status === 'warning') return 'bg-amber-50';
+    return '';
+  };
+
+  const renderExpandedRow = (record: Medicine) => {
+    const batches = batchMap[record.id] || [];
+    if (batches.length === 0) {
+      return <div className="py-3 text-gray-400 text-sm">暂无批次记录</div>;
+    }
+    return (
+      <div className="py-2">
+        <div className="text-xs text-gray-500 mb-2">
+          共 {batches.length} 个批次 ·
+          <span className="text-red-500"> 红色为已过期</span> ·
+          <span className="text-orange-500"> 橙色为近效期（30天内）</span>
+        </div>
+        <Table
+          size="small"
+          pagination={false}
+          rowKey="id"
+          data={batches}
+          columns={batchColumns}
+          rowClassName={getBatchRowClassName}
+        />
+      </div>
+    );
+  };
 
   const statCards = [
     {
@@ -316,6 +408,12 @@ export default function MedicineList() {
             ...pagination,
             showTotal: true,
             onChange: handlePageChange,
+          }}
+          expandedRowRender={(record: Medicine) => renderExpandedRow(record)}
+          onExpand={(record: Medicine, expanded: boolean) => {
+            if (expanded) {
+              fetchBatches(record.id);
+            }
           }}
         />
       </Card>

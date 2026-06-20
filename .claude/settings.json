@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(git commit -m '.2187342742565564:ed490702b4cb09df6e8e79a49c986174_6a354fdff9029645549f3b66.6a355009f9029645549f3b75.6a3550087f470c7527686533:Trae CN.T\\(2026/6/19 22:19:53\\)')"
+      "PowerShell(git commit -m '.2187342742565564:ed490702b4cb09df6e8e79a49c986174_6a354fdff9029645549f3b66.6a355009f9029645549f3b75.6a3550087f470c7527686533:Trae CN.T\\(2026/6/19 22:19:53\\)')",
+      "PowerShell(curl.exe -X POST \"http://192.168.10.43:38427/api/records\" -H \"Content-Type: application/json; charset=utf-8\" --data-binary \"@D:\\\\proje\\\\label-105\\\\record.json\")",
+      "PowerShell(git commit -m '.2187342742565564:957326c66efe8513d65fdc0363465999_6a35fed94d2cf0b7162f4356.6a35ff1b4d2cf0b7162f43c1.6a35ff1aeeb24865ddf3a2b9:Trae CN.T\\(2026/6/20 10:46:51\\)')"
     ]
   }
 }

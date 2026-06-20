@@ -222,15 +222,25 @@ export default function MainLayout() {
     return items.map((item) => {
       if (item.children && item.children.length > 0) {
         return (
-          <SubMenu key={item.key} title={<span>{item.icon}{item.label}</span>}>
+          <SubMenu
+            key={item.key}
+            title={
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                {item.icon}
+                <span>{item.label}</span>
+              </span>
+            }
+          >
             {renderMenuItems(item.children)}
           </SubMenu>
         );
       }
       return (
         <MenuItem key={item.key}>
-          {item.icon}
-          {item.label}
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            {item.icon}
+            <span>{item.label}</span>
+          </span>
         </MenuItem>
       );
     });
@@ -293,21 +303,20 @@ export default function MainLayout() {
           collapsible
           trigger={null}
           breakpoint="lg"
-          className="bg-white border-r border-gray-200"
           width={240}
           collapsedWidth={64}
         >
-          <div className="h-16 flex items-center justify-center border-b border-white/10">
+          <div className="h-16 flex items-center justify-center border-b border-pink-200">
             {collapsed ? (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-300 to-primary-500 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center shadow-md">
                 <span className="text-lg font-bold text-white">医</span>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-300 to-primary-500 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center shadow-md">
                   <span className="text-lg font-bold text-white">医</span>
                 </div>
-                <span className="text-lg font-serif font-bold text-white">医美管理系统</span>
+                <span className="text-lg font-serif font-bold text-pink-800">医美管理系统</span>
               </div>
             )}
           </div>

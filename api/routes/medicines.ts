@@ -1,6 +1,8 @@
 import { Router, type Request, type Response } from 'express';
 import {
   getMedicines,
+  getLowStockMedicines,
+  getExpiringMedicines,
   getMedicineById,
   createMedicine,
   updateMedicine,
@@ -20,6 +22,14 @@ router.use(authMiddleware);
 
 router.get('/', requirePermission('medicine:read'), async (req: Request, res: Response) => {
   await getMedicines(req, res);
+});
+
+router.get('/low-stock', requirePermission('medicine:read'), async (req: Request, res: Response) => {
+  await getLowStockMedicines(req, res);
+});
+
+router.get('/expiring', requirePermission('medicine:read'), async (req: Request, res: Response) => {
+  await getExpiringMedicines(req, res);
 });
 
 router.get('/:id', requirePermission('medicine:read'), async (req: Request, res: Response) => {

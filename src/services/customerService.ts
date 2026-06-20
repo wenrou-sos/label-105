@@ -37,14 +37,10 @@ export const getCustomerPhotos = async (customerId: number): Promise<ApiResponse
   return apiClient.get(`/customers/${customerId}/photos`);
 };
 
-export const uploadPhoto = async (customerId: number, formData: FormData): Promise<ApiResponse<Photo>> => {
-  return apiClient.post(`/customers/${customerId}/photos`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+export const uploadPhoto = async (customerId: number, data: { type: string; angle: string; url: string; thumbnailUrl?: string }): Promise<ApiResponse<Photo>> => {
+  return apiClient.post(`/customers/${customerId}/photos`, data);
 };
 
 export const deletePhoto = async (photoId: number): Promise<ApiResponse<void>> => {
-  return apiClient.delete(`/photos/${photoId}`);
+  return apiClient.delete(`/customers/photos/${photoId}`);
 };

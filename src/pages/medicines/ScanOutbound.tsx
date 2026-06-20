@@ -31,6 +31,7 @@ import { useNavigate } from 'react-router-dom';
 import { getTraceCodeByCode, scanOutbound } from '@/services/medicineService.ts';
 import { getCustomers } from '@/services/customerService.ts';
 import type { TraceCode, Customer } from '../../../shared/types.ts';
+import { getExpiryStatus } from '@/lib/utils.ts';
 
 const { Row, Col } = Grid;
 const { Search: SearchInput } = Input;
@@ -48,6 +49,8 @@ interface ScannedItem {
   code: string;
   traceCode: TraceCode & TraceCodeDetail;
   status: 'valid' | 'invalid' | 'used' | 'expired';
+  nearExpiry?: boolean;
+  daysLeft?: number;
 }
 
 export default function ScanOutbound() {
@@ -81,20 +84,27 @@ export default function ScanOutbound() {
       if (res.success && res.data) {
         const traceCode = res.data as TraceCode & TraceCodeDetail;
         let status: ScannedItem['status'] = 'valid';
+        let nearExpiry = false;
+        let daysLeft: number | undefined;
 
         if (traceCode.status !== 'in_stock') {
           status = 'used';
-        } else if (
-          traceCode.expiryDate &&
-          new Date(traceCode.expiryDate) < new Date()
-        ) {
-          status = 'expired';
+        } else if (traceCode.expiryDate) {
+          const info = getExpiryStatus(traceCode.expiryDate);
+          if (info.status === 'expired') {
+            status = 'expired';
+          } else if (info.status === 'warning') {
+            nearExpiry = true;
+            daysLeft = info.daysLeft;
+          }
         }
 
         return {
           code,
           traceCode,
           status,
+          nearExpiry,
+          daysLeft,
         };
       }
       return null;
@@ -124,7 +134,9 @@ export default function ScanOutbound() {
         if (result.status === 'used') {
           Message.warning('该追溯码已被使用');
         } else if (result.status === 'expired') {
-          Message.warning('该药品已过期');
+          Message.warning('该药品已过期，禁止出库');
+        } else if (result.nearExpiry) {
+          Message.warning(`近效期提醒：将于 ${result.daysLeft} 天后到期，请尽快使用`);
         } else {
           Message.success('扫码成功');
         }
@@ -164,7 +176,15 @@ export default function ScanOutbound() {
     setLoading(true);
     try {
       for (const item of validItems) {
-        await scanOutbound(item.code, selectedCustomer);
+        try {
+          await scanOutbound(item.code, selectedCustomer);
+        } catch (err) {
+          const msg =
+            (err as { response?: { data?: { error?: string } } })?.response?.data
+              ?.error || '出库失败';
+          Message.error(`${item.traceCode.medicineName || item.code}：${msg}`);
+          return;
+        }
       }
       setCompleted(true);
       Message.success(`成功出库 ${validItems.length} 个药品`);
@@ -182,6 +202,9 @@ export default function ScanOutbound() {
 
   const validCount = scannedItems.filter((item) => item.status === 'valid').length;
   const invalidCount = scannedItems.filter((item) => item.status !== 'valid').length;
+  const nearExpiryCount = scannedItems.filter(
+    (item) => item.status === 'valid' && item.nearExpiry
+  ).length;
 
   const getStatusInfo = (status: ScannedItem['status']) => {
     const statusMap = {
@@ -360,14 +383,18 @@ export default function ScanOutbound() {
                             <div
                               className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                                 item.status === 'valid'
-                                  ? 'bg-green-100'
+                                  ? item.nearExpiry
+                                    ? 'bg-amber-100'
+                                    : 'bg-green-100'
                                   : 'bg-red-100'
                               }`}
                             >
                               <Package
                                 className={`w-5 h-5 ${
                                   item.status === 'valid'
-                                    ? 'text-green-500'
+                                    ? item.nearExpiry
+                                      ? 'text-amber-500'
+                                      : 'text-green-500'
                                     : 'text-red-500'
                                 }`}
                               />
@@ -381,6 +408,9 @@ export default function ScanOutbound() {
                               <Tag color={statusInfo.color} icon={<StatusIcon className="w-3 h-3" />}>
                                 {statusInfo.text}
                               </Tag>
+                              {item.status === 'valid' && item.nearExpiry && (
+                                <Tag color="orange">近效期</Tag>
+                              )}
                             </Space>
                           }
                           description={
@@ -389,15 +419,41 @@ export default function ScanOutbound() {
                                 {item.traceCode.medicineSpecifications} | 批次：
                                 {item.traceCode.batchNumber}
                               </div>
+                              {item.traceCode.expiryDate && (
+                                <div>
+                                  有效期至：
+                                  <span
+                                    className={
+                                      item.status === 'expired'
+                                        ? 'text-red-600 font-medium'
+                                        : item.nearExpiry
+                                          ? 'text-orange-600 font-medium'
+                                          : ''
+                                    }
+                                  >
+                                    {new Date(item.traceCode.expiryDate).toLocaleDateString('zh-CN')}
+                                  </span>
+                                </div>
+                              )}
                               <div className="font-mono">{item.code}</div>
-                              {item.status !== 'valid' && (
+                              {item.status === 'used' && (
                                 <Alert
                                   type="warning"
-                                  content={
-                                    item.status === 'used'
-                                      ? '该药品已被使用'
-                                      : '该药品已过期'
-                                  }
+                                  content="该药品已被使用，将不会出库"
+                                  style={{ padding: '4px 8px' }}
+                                />
+                              )}
+                              {item.status === 'expired' && (
+                                <Alert
+                                  type="error"
+                                  content="该药品已过期，禁止出库"
+                                  style={{ padding: '4px 8px' }}
+                                />
+                              )}
+                              {item.status === 'valid' && item.nearExpiry && (
+                                <Alert
+                                  type="warning"
+                                  content={`近效期：将于 ${item.daysLeft} 天后到期，请尽快使用`}
                                   style={{ padding: '4px 8px' }}
                                 />
                               )}
@@ -473,6 +529,12 @@ export default function ScanOutbound() {
                   <span className="text-gray-500">有效数量</span>
                   <span className="font-medium text-green-600">{validCount}</span>
                 </div>
+                {nearExpiryCount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">近效期数量</span>
+                    <span className="font-medium text-orange-600">{nearExpiryCount}</span>
+                  </div>
+                )}
                 {invalidCount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">异常数量</span>
@@ -480,6 +542,14 @@ export default function ScanOutbound() {
                   </div>
                 )}
               </div>
+
+              {nearExpiryCount > 0 && (
+                <Alert
+                  type="warning"
+                  content={`有 ${nearExpiryCount} 个药品处于近效期（30天内），请尽快使用`}
+                  className="mb-4"
+                />
+              )}
 
               {invalidCount > 0 && (
                 <Alert

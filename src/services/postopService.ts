@@ -11,55 +11,65 @@ import type {
 export const getPostOpVisits = async (
   params: PaginationParams & { surgeryId?: number }
 ): Promise<ApiResponse<PaginatedResponse<PostOpVisit & { customerName?: string; surgeryName?: string; recordedByName?: string }>>> => {
-  return apiClient.get('/postop-visits', { params });
+  return apiClient.get('/postop/visits', { params });
 };
 
 export const getPostOpVisitById = async (
   id: number
 ): Promise<ApiResponse<PostOpVisit & { customerName?: string; surgeryName?: string; recordedByName?: string; photos: Photo[] }>> => {
-  return apiClient.get(`/postop-visits/${id}`);
+  return apiClient.get(`/postop/visits/${id}`);
+};
+
+type PostOpVisitInput = Omit<Partial<PostOpVisit>, 'visitDate' | 'sutureRemovalDate'> & {
+  visitDate?: string | Date;
+  sutureRemovalDate?: string | Date;
 };
 
 export const createPostOpVisit = async (
-  data: Partial<PostOpVisit> | Record<string, any>
+  data: PostOpVisitInput
 ): Promise<ApiResponse<PostOpVisit>> => {
-  return apiClient.post('/postop-visits', data);
+  return apiClient.post('/postop/visits', data);
 };
 
 export const updatePostOpVisit = async (
   id: number,
-  data: Partial<PostOpVisit> | Record<string, any>
+  data: PostOpVisitInput
 ): Promise<ApiResponse<PostOpVisit>> => {
-  return apiClient.put(`/postop-visits/${id}`, data);
+  return apiClient.put(`/postop/visits/${id}`, data);
 };
 
 export const deletePostOpVisit = async (id: number): Promise<ApiResponse<void>> => {
-  return apiClient.delete(`/postop-visits/${id}`);
+  return apiClient.delete(`/postop/visits/${id}`);
 };
 
 export const getComplications = async (
   surgeryId?: number
 ): Promise<ApiResponse<Complication[]>> => {
-  const url = surgeryId ? `/surgeries/${surgeryId}/complications` : '/complications';
+  const url = surgeryId ? `/postop/surgeries/${surgeryId}/complications` : '/postop/complications';
   return apiClient.get(url);
+};
+
+type ComplicationInput = Omit<Partial<Complication>, 'occurredAt' | 'resolvedAt'> & {
+  occurredAt?: string | Date;
+  resolvedAt?: string | Date;
 };
 
 export const createComplication = async (
   surgeryId: number,
-  data: Partial<Complication> | Record<string, any>
+  data: ComplicationInput
 ): Promise<ApiResponse<Complication>> => {
-  return apiClient.post(`/surgeries/${surgeryId}/complications`, data);
+  return apiClient.post(`/postop/complications`, { ...data, surgeryId });
 };
 
 export const updateComplication = async (
   id: number,
-  data: Partial<Complication> | Record<string, any>
+  data: ComplicationInput
 ): Promise<ApiResponse<Complication>> => {
-  return apiClient.put(`/complications/${id}`, data);
+  return apiClient.put(`/postop/complications/${id}`, data);
 };
 
 export const deleteComplication = async (id: number): Promise<ApiResponse<void>> => {
-  return apiClient.delete(`/complications/${id}`);
+  return apiClient.delete(`/postop/complications/${id}`);
 };
 
 export const getPhotoComparison = async (
@@ -67,8 +77,8 @@ export const getPhotoComparison = async (
   surgeryId?: number
 ): Promise<ApiResponse<{ preOpPhotos: Photo[]; postOpPhotos: Photo[] }>> => {
   const url = surgeryId
-    ? `/customers/${customerId}/photo-comparison?surgeryId=${surgeryId}`
-    : `/customers/${customerId}/photo-comparison`;
+    ? `/postop/photos/comparison/${customerId}/${surgeryId}`
+    : `/postop/photos/comparison/${customerId}`;
   return apiClient.get(url);
 };
 
@@ -76,5 +86,5 @@ export const uploadPostOpPhoto = async (
   visitId: number,
   data: Partial<Photo>
 ): Promise<ApiResponse<Photo>> => {
-  return apiClient.post(`/postop-visits/${visitId}/photos`, data);
+  return apiClient.post(`/postop/visits/${visitId}/photos`, data);
 };

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Button, Message, Card, Modal, Space, Tag, Empty, Popconfirm } from '@arco-design/web-react';
+import { Button, Message, Card, Modal, Tag, Popconfirm } from '@arco-design/web-react';
 import { ArrowLeft, Upload, Crop as CropIcon, Trash2, Eye, Check } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ReactCrop, { type Crop } from 'react-image-crop';
@@ -63,7 +63,7 @@ export default function PhotoUpload() {
       }
 
       if (photosRes.success && photosRes.data) {
-        const preopPhotos = photosRes.data.filter(p => p.type === 'front' || p.type === 'side45' || p.type === 'side90');
+        const preopPhotos = photosRes.data.filter(p => !p.postOpVisitId && ['front', 'side45', 'side90'].includes(p.angle || ''));
         setPhotos(REQUIRED_ANGLES.map(item => ({
           ...item,
           photo: preopPhotos.find(p => p.angle === item.angle) || null,
@@ -104,7 +104,7 @@ export default function PhotoUpload() {
     }
   };
 
-  const getCroppedImage = (): Promise<Blob | null> => {
+  const getCroppedImage = (): Promise<string | null> => {
     if (!completedCrop || !imageRef.current) return Promise.resolve(null);
 
     const canvas = document.createElement('canvas');
@@ -130,27 +130,28 @@ export default function PhotoUpload() {
     );
 
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.9);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      resolve(dataUrl);
     });
   };
 
   const handleCropComplete = async () => {
     if (!uploadingAngle) return;
 
-    const croppedBlob = await getCroppedImage();
-    if (!croppedBlob) {
+    const croppedDataUrl = await getCroppedImage();
+    if (!croppedDataUrl) {
       Message.error('裁剪失败');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('photo', croppedBlob, `photo_${uploadingAngle}.jpg`);
-    formData.append('type', uploadingAngle);
-    formData.append('angle', uploadingAngle);
-
     setLoading(true);
     try {
-      const res = await uploadPhoto(Number(id), formData);
+      const res = await uploadPhoto(Number(id), {
+        type: uploadingAngle,
+        angle: uploadingAngle,
+        url: croppedDataUrl,
+        thumbnailUrl: croppedDataUrl,
+      });
       if (res.success && res.data) {
         Message.success('上传成功');
         setCropModalVisible(false);

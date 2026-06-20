@@ -45,7 +45,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Arco Design 主题覆盖 */
 .arco-layout-sider {
-  background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%) !important;
+  background: linear-gradient(180deg, #FDF2F8 0%, #FCE7F3 50%, #FBCFE8 100%) !important;
+  border-right: 1px solid #F9A8D4 !important;
 }
 
 .arco-menu {
@@ -53,18 +54,88 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .arco-menu-item {
-  color: rgba(255, 255, 255, 0.75) !important;
+  color: #831843 !important;
 }
 
 .arco-menu-item:hover {
-  color: #fff !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  color: #9D174D !important;
+  background: rgba(244, 114, 182, 0.15) !important;
 }
 
 .arco-menu-selected {
-  color: #fff !important;
-  background: linear-gradient(90deg, rgba(248, 180, 217, 0.3) 0%, transparent 100%) !important;
-  border-left: 3px solid #F8B4D9;
+  color: #9D174D !important;
+  background: linear-gradient(90deg, rgba(244, 114, 182, 0.25) 0%, rgba(244, 114, 182, 0.05) 100%) !important;
+  border-left: 3px solid #F472B6;
+  font-weight: 500;
+}
+
+.arco-menu-inline-header {
+  color: #9D174D !important;
+  font-weight: 500;
+}
+
+.arco-menu-inline-header:hover {
+  color: #BE185D !important;
+  background: rgba(244, 114, 182, 0.1) !important;
+}
+
+.arco-menu-pop-header,
+.arco-menu-vertical .arco-menu-item,
+.arco-menu-vertical .arco-menu-inline-header {
+  color: #831843 !important;
+}
+
+.arco-menu-icon-suffix {
+  color: #9D174D !important;
+}
+
+/* 二级菜单修复 - 确保深色背景上显示深色文字 */
+.arco-menu-inline-content .arco-menu-item {
+  color: #831843 !important;
+  background: rgba(253, 242, 248, 0.5) !important;
+}
+
+.arco-menu-inline-content .arco-menu-item:hover {
+  color: #9D174D !important;
+  background: rgba(244, 114, 182, 0.2) !important;
+}
+
+.arco-menu-inline-content .arco-menu-selected {
+  color: #9D174D !important;
+  background: rgba(244, 114, 182, 0.25) !important;
+}
+
+/* 内容区域背景 - 与登录页风格统一 */
+.arco-layout-content {
+  background: linear-gradient(135deg, #FDF2F8 0%, #FFF1F2 25%, #EFF6FF 75%, #FEF3C7 100%);
+  position: relative;
+}
+
+.arco-layout-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 10% 20%, rgba(248, 180, 217, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(74, 144, 217, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.arco-layout-content > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* 卡片背景增强 - 玻璃拟态效果 */
+.arco-card {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
 }
 
 .arco-btn-primary {

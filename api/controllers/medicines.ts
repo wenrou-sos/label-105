@@ -48,6 +48,91 @@ export const getMedicines = async (req: AuthenticatedRequest, res: Response): Pr
   }
 };
 
+const LOW_STOCK_THRESHOLD = 10;
+const NEAR_EXPIRY_DAYS = 30;
+
+const computeExpiryStatus = (expiryDate: Date): { status: 'expired' | 'near' | 'normal'; daysLeft: number } => {
+  const expiry = new Date(expiryDate);
+  const now = new Date();
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysLeft = Math.ceil((expiry.getTime() - startOfDay.getTime()) / msPerDay);
+
+  if (expiry.getTime() < now.getTime()) {
+    return { status: 'expired', daysLeft };
+  }
+  if (daysLeft <= NEAR_EXPIRY_DAYS) {
+    return { status: 'near', daysLeft };
+  }
+  return { status: 'normal', daysLeft };
+};
+
+export const getLowStockMedicines = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const db = await getDb();
+    const threshold = req.query.threshold ? Number(req.query.threshold) : LOW_STOCK_THRESHOLD;
+
+    const list = db.medicines
+      .filter((m) => m.stock < threshold)
+      .sort((a, b) => a.stock - b.stock)
+      .map((m) => ({
+        ...m,
+        lowStock: true,
+        threshold,
+      }));
+
+    res.json({
+      success: true,
+      data: list,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: '获取低库存药品失败：' + (error as Error).message,
+    });
+  }
+};
+
+export const getExpiringMedicines = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const db = await getDb();
+    const days = req.query.days ? Number(req.query.days) : NEAR_EXPIRY_DAYS;
+    const now = new Date();
+    const deadline = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+    const list = db.medicineBatches
+      .filter((b) => {
+        const expiry = new Date(b.expiryDate);
+        return expiry <= deadline;
+      })
+      .map((b) => {
+        const medicine = db.medicines.find((m) => m.id === b.medicineId);
+        const { status, daysLeft } = computeExpiryStatus(b.expiryDate);
+        return {
+          ...b,
+          medicineId: b.medicineId,
+          medicineName: medicine?.name,
+          medicineSpecifications: medicine?.specifications,
+          unit: medicine?.unit,
+          receivedByName: db.users.find((u) => u.id === b.receivedBy)?.name,
+          expiryStatus: status,
+          daysLeft,
+        };
+      })
+      .sort((a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime());
+
+    res.json({
+      success: true,
+      data: list,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: '获取临期药品失败：' + (error as Error).message,
+    });
+  }
+};
+
 export const getMedicineById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
@@ -551,6 +636,24 @@ export const scanOutbound = async (req: AuthenticatedRequest, res: Response): Pr
       return;
     }
 
+    const batch = db.medicineBatches.find((b) => b.id === traceCode.batchId);
+    if (!batch) {
+      res.status(404).json({
+        success: false,
+        error: '所属批次不存在',
+      });
+      return;
+    }
+
+    const expiryInfo = computeExpiryStatus(batch.expiryDate);
+    if (expiryInfo.status === 'expired') {
+      res.status(400).json({
+        success: false,
+        error: `该药品已过期（批次 ${batch.batchNumber}），禁止出库`,
+      });
+      return;
+    }
+
     traceCode.status = 'used';
     traceCode.usedBy = req.user.id;
     traceCode.usedAt = new Date();
@@ -558,20 +661,21 @@ export const scanOutbound = async (req: AuthenticatedRequest, res: Response): Pr
     traceCode.surgeryId = surgeryId ? Number(surgeryId) : undefined;
     traceCode.updatedAt = new Date();
 
-    const batch = db.medicineBatches.find((b) => b.id === traceCode.batchId);
-    if (batch) {
-      batch.quantity -= 1;
+    batch.quantity -= 1;
 
-      const medicine = db.medicines.find((m) => m.id === batch.medicineId);
-      if (medicine) {
-        medicine.stock -= 1;
-        medicine.updatedAt = new Date();
-      }
+    const medicine = db.medicines.find((m) => m.id === batch.medicineId);
+    if (medicine) {
+      medicine.stock -= 1;
+      medicine.updatedAt = new Date();
     }
 
     res.json({
       success: true,
       data: traceCode,
+      message:
+        expiryInfo.status === 'near'
+          ? `提示：批次 ${batch.batchNumber} 距过期仅剩 ${expiryInfo.daysLeft} 天`
+          : undefined,
     });
   } catch (error) {
     res.status(500).json({
