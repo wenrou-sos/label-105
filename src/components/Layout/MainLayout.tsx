@@ -70,7 +70,7 @@ const menuItems: MenuItemConfig[] = [
     children: [
       {
         key: 'surgery-list',
-        label: '手术列表',
+        label: '手术排期',
         path: '/surgeries',
         permission: 'surgery:read',
       },

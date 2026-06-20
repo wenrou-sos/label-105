@@ -6,7 +6,7 @@ import type { Surgery, ConsentForm, Supply, PaginatedResponse } from '../../shar
 export const getSurgeries = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const db = await getDb();
-    const { page = 1, pageSize = 10, status, customerId } = req.query;
+    const { page = 1, pageSize = 10, status, customerId, keyword, startDate, endDate } = req.query;
 
     let surgeries = [...db.surgeries];
 
@@ -18,10 +18,35 @@ export const getSurgeries = async (req: AuthenticatedRequest, res: Response): Pr
       surgeries = surgeries.filter((s) => s.customerId === Number(customerId));
     }
 
+    if (keyword) {
+      const kw = String(keyword).toLowerCase();
+      surgeries = surgeries.filter((s) => {
+        const customer = db.customers.find((c) => c.id === s.customerId);
+        const surgeon = db.users.find((u) => u.id === s.surgeonId);
+        return (
+          s.surgeryName.toLowerCase().includes(kw) ||
+          (customer?.name && customer.name.toLowerCase().includes(kw)) ||
+          (surgeon?.name && surgeon.name.toLowerCase().includes(kw)) ||
+          String(s.customerId) === kw
+        );
+      });
+    }
+
+    if (startDate) {
+      const start = new Date(String(startDate));
+      start.setHours(0, 0, 0, 0);
+      surgeries = surgeries.filter((s) => new Date(s.surgeryDate).getTime() >= start.getTime());
+    }
+    if (endDate) {
+      const end = new Date(String(endDate));
+      end.setHours(23, 59, 59, 999);
+      surgeries = surgeries.filter((s) => new Date(s.surgeryDate).getTime() <= end.getTime());
+    }
+
     const total = surgeries.length;
     const start = (Number(page) - 1) * Number(pageSize);
-    const end = start + Number(pageSize);
-    const list = surgeries.slice(start, end).map((s) => ({
+    const endIdx = start + Number(pageSize);
+    const list = surgeries.slice(start, endIdx).map((s) => ({
       ...s,
       customerName: db.customers.find((c) => c.id === s.customerId)?.name,
       surgeonName: db.users.find((u) => u.id === s.surgeonId)?.name,

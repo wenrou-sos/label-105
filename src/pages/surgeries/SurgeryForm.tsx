@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Form, Input, Select, DatePicker, Radio, Button, Card, Space, Message, Steps, Grid } from '@arco-design/web-react';
 import { Scissors, User, Calendar, Syringe, FileText, Save, ArrowLeft, ArrowRight } from 'lucide-react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { createSurgery, updateSurgery } from '@/services/surgeryService';
 import type { Surgery, AnesthesiaType } from '../../../shared/types';
 
@@ -31,6 +32,19 @@ export default function SurgeryForm({ customerId, surgeryId, initialData, onSucc
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (!surgeryId && !initialData) {
+      const dateParam = searchParams.get('date');
+      if (dateParam) {
+        const parsed = new Date(`${dateParam}T10:00:00`);
+        if (!isNaN(parsed.getTime())) {
+          form.setFieldValue('surgeryDate', parsed);
+        }
+      }
+    }
+  }, [surgeryId, initialData, searchParams, form]);
 
   const handleSubmit = async (values: any) => {
     setSubmitting(true);
