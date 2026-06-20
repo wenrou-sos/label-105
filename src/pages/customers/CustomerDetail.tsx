@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Button, Card, Tabs, Tag, Space, Descriptions, Table, Empty, Image, Modal } from '@arco-design/web-react';
-import { ArrowLeft, Edit, UserPlus, Camera, Calendar, User, Phone, MapPin, FileText, Eye } from 'lucide-react';
+import { Button, Card, Tabs, Tag, Space, Descriptions, Table, Empty, Modal, Checkbox, Message } from '@arco-design/web-react';
+import { ArrowLeft, Edit, UserPlus, Camera, Calendar, User, Phone, MapPin, FileText, Eye, Tag as TagIcon, Settings } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getCustomerById, getCustomerConsultation, getCustomerPhotos } from '@/services/customerService.ts';
-import type { Customer, Consultation, Photo, Surgery } from '../../../shared/types.ts';
+import { getCustomerById, getCustomerConsultation, getCustomerPhotos, getTags, updateCustomerTags } from '@/services/customerService.ts';
+import type { Customer, Consultation, Photo, CustomerTag } from '../../../shared/types.ts';
 
 const { TabPane } = Tabs;
 
@@ -22,6 +22,19 @@ const PHOTO_ANGLE_MAP: Record<string, string> = {
   side90: '侧面90°',
 };
 
+const tagColorMap: Record<string, string> = {
+  gold: 'gold',
+  red: 'red',
+  purple: 'purple',
+  blue: 'arcoblue',
+  orange: 'orange',
+  gray: 'gray',
+  green: 'green',
+  cyan: 'cyan',
+  pink: 'pink',
+  lime: 'lime',
+};
+
 export default function CustomerDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -31,6 +44,25 @@ export default function CustomerDetail() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [allTags, setAllTags] = useState<CustomerTag[]>([]);
+  const [tagEditorVisible, setTagEditorVisible] = useState(false);
+  const [editingTagIds, setEditingTagIds] = useState<number[]>([]);
+  const [savingTags, setSavingTags] = useState(false);
+
+  useEffect(() => {
+    fetchAllTags();
+  }, []);
+
+  const fetchAllTags = async () => {
+    try {
+      const res = await getTags();
+      if (res.success && res.data) {
+        setAllTags(res.data);
+      }
+    } catch (error) {
+      console.error('获取标签列表失败:', error);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -66,6 +98,37 @@ export default function CustomerDetail() {
   const handlePreview = (url: string) => {
     setPreviewImage(url);
     setPreviewVisible(true);
+  };
+
+  const openTagEditor = () => {
+    if (customer) {
+      setEditingTagIds(customer.tagIds || []);
+      setTagEditorVisible(true);
+    }
+  };
+
+  const handleTagEditorChange = (values: string[]) => {
+    setEditingTagIds(values.map((v) => Number(v)));
+  };
+
+  const handleSaveTags = async () => {
+    setSavingTags(true);
+    try {
+      const res = await updateCustomerTags(Number(id), editingTagIds);
+      if (res.success && res.data && customer) {
+        setCustomer({
+          ...customer,
+          tags: res.data,
+          tagIds: res.data.map((t) => t.id),
+        });
+        setTagEditorVisible(false);
+        Message.success('标签更新成功');
+      }
+    } catch (_error) {
+      Message.error('标签更新失败');
+    } finally {
+      setSavingTags(false);
+    }
   };
 
   const surgeryColumns = [
@@ -141,6 +204,25 @@ export default function CustomerDetail() {
                 <Tag color={customer.gender === 'female' ? 'pink' : 'blue'}>
                   {customer.gender === 'female' ? '女' : '男'}
                 </Tag>
+              </div>
+              <div className="flex items-center gap-2 mb-4 flex-wrap">
+                {customer.tags && customer.tags.length > 0 ? (
+                  customer.tags.map((tag) => (
+                    <Tag key={tag.id} color={tagColorMap[tag.color] || 'blue'}>
+                      {tag.name}
+                    </Tag>
+                  ))
+                ) : (
+                  <span className="text-sm text-gray-400">暂无标签</span>
+                )}
+                <Button
+                  type="text"
+                  size="mini"
+                  icon={<Settings className="w-3 h-3" />}
+                  onClick={openTagEditor}
+                >
+                  管理标签
+                </Button>
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <InfoItem
@@ -358,6 +440,68 @@ export default function CustomerDetail() {
           </TabPane>
         </Tabs>
       </Card>
+
+      <Modal
+        title={
+          <span className="flex items-center gap-2">
+            <TagIcon className="w-4 h-4" />
+            管理客户标签
+          </span>
+        }
+        visible={tagEditorVisible}
+        onOk={handleSaveTags}
+        onCancel={() => setTagEditorVisible(false)}
+        okText="保存"
+        cancelText="取消"
+        confirmLoading={savingTags}
+        style={{ width: 520 }}
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">选择适合该客户的标签（可多选）</p>
+          {allTags.length > 0 ? (
+            <Checkbox.Group
+              value={editingTagIds.map(String)}
+              onChange={handleTagEditorChange}
+              style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}
+            >
+              {allTags.map((tag) => (
+                <div
+                  key={tag.id}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all cursor-pointer ${
+                    editingTagIds.includes(tag.id)
+                      ? 'border-blue-400 bg-blue-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <Checkbox value={String(tag.id)} />
+                  <Tag color={tagColorMap[tag.color] || 'blue'}>
+                    {tag.name}
+                  </Tag>
+                  {tag.description && (
+                    <span className="text-xs text-gray-400 ml-1">
+                      {tag.description}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </Checkbox.Group>
+          ) : (
+            <div className="py-8 text-center text-gray-400">
+              暂无可用标签
+            </div>
+          )}
+          <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+            <span>已选择 {editingTagIds.length} 个标签</span>
+            <Button
+              type="text"
+              size="mini"
+              onClick={() => setEditingTagIds([])}
+            >
+              清空选择
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       <Modal
         title="照片预览"

@@ -1,13 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Form, Input, Button, Radio, DatePicker, Message, Space, Card } from '@arco-design/web-react';
-import { User, Phone, Calendar, MapPin, Save, ArrowLeft } from 'lucide-react';
+import { Form, Input, Button, Radio, DatePicker, Message, Space, Card, Checkbox, Tag } from '@arco-design/web-react';
+import { User, Phone, Calendar, Save, ArrowLeft, Tag as TagIcon } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createCustomer, updateCustomer, getCustomerById } from '@/services/customerService.ts';
-import type { Customer } from '../../../shared/types.ts';
+import { createCustomer, updateCustomer, getCustomerById, getTags } from '@/services/customerService.ts';
+import type { Customer, CustomerTag } from '../../../shared/types.ts';
 
 const FormItem = Form.Item;
 const { TextArea } = Input;
 const { Group: RadioGroup } = Radio;
+
+const tagColorMap: Record<string, string> = {
+  gold: 'gold',
+  red: 'red',
+  purple: 'purple',
+  blue: 'arcoblue',
+  orange: 'orange',
+  gray: 'gray',
+  green: 'green',
+  cyan: 'cyan',
+  pink: 'pink',
+  lime: 'lime',
+};
 
 export default function CustomerForm() {
   const navigate = useNavigate();
@@ -15,6 +28,23 @@ export default function CustomerForm() {
   const isEdit = !!id;
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const [tags, setTags] = useState<CustomerTag[]>([]);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+
+  const fetchTags = async () => {
+    try {
+      const res = await getTags();
+      if (res.success && res.data) {
+        setTags(res.data);
+      }
+    } catch (_error) {
+      Message.error('获取标签列表失败');
+    }
+  };
+
+  useEffect(() => {
+    fetchTags();
+  }, []);
 
   useEffect(() => {
     if (isEdit) {
@@ -36,21 +66,27 @@ export default function CustomerForm() {
           birthday: customer.birthday ? new Date(customer.birthday) : undefined,
           contactAddress: customer.contactAddress,
         });
+        setSelectedTagIds(customer.tagIds || []);
       }
-    } catch (error) {
+    } catch (_error) {
       Message.error('获取顾客信息失败');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleTagChange = (checkedValues: string[]) => {
+    setSelectedTagIds(checkedValues.map((v) => Number(v)));
+  };
+
   const handleSubmit = async (values: Partial<Customer>) => {
     setLoading(true);
     try {
-      const data: Partial<Customer> & { birthday?: string } = {
+      const data: Partial<Customer> & { birthday?: string; tagIds?: number[] } = {
         ...values,
-        birthday: values.birthday ? values.birthday.toISOString() : undefined,
-      } as Partial<Customer> & { birthday?: string };
+        birthday: values.birthday ? (values.birthday as unknown as Date).toISOString() : undefined,
+        tagIds: selectedTagIds,
+      } as Partial<Customer> & { birthday?: string; tagIds?: number[] };
       
       if (isEdit) {
         const res = await updateCustomer(Number(id), data);
@@ -65,7 +101,7 @@ export default function CustomerForm() {
           navigate('/customers');
         }
       }
-    } catch (error) {
+    } catch (_error) {
       Message.error(isEdit ? '更新失败' : '创建失败');
     } finally {
       setLoading(false);
@@ -172,6 +208,41 @@ export default function CustomerForm() {
               placeholder="请输入联系地址"
               rows={3}
             />
+          </FormItem>
+
+          <FormItem
+            label="客户标签"
+          >
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="flex items-center gap-2 mb-3 text-gray-600">
+                <TagIcon className="w-4 h-4" />
+                <span className="text-sm">选择适合该客户的标签（可多选）</span>
+              </div>
+              {tags.length > 0 ? (
+                <Checkbox.Group
+                  value={selectedTagIds.map(String)}
+                  onChange={handleTagChange}
+                  style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}
+                >
+                  {tags.map((tag) => (
+                    <div key={tag.id} className="flex items-center">
+                      <Checkbox value={String(tag.id)}>
+                        <Tag color={tagColorMap[tag.color] || 'blue'} style={{ marginLeft: 4 }}>
+                          {tag.name}
+                        </Tag>
+                      </Checkbox>
+                    </div>
+                  ))}
+                </Checkbox.Group>
+              ) : (
+                <span className="text-gray-400 text-sm">暂无标签，可在系统设置中添加</span>
+              )}
+              {selectedTagIds.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <span className="text-xs text-gray-500">已选择 {selectedTagIds.length} 个标签</span>
+                </div>
+              )}
+            </div>
           </FormItem>
 
           <FormItem>

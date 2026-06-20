@@ -10,6 +10,13 @@ import {
   getPhotos,
   uploadPhoto,
   deletePhoto,
+  getTags,
+  createTag,
+  updateTag,
+  deleteTag,
+  getCustomerTags,
+  updateCustomerTags,
+  getTagStats,
 } from '../controllers/customers.js';
 import { authMiddleware, requirePermission } from '../middleware/auth.js';
 
@@ -35,6 +42,34 @@ router.put('/:id', requirePermission('customer:update'), async (req: Request, re
 
 router.delete('/:id', requirePermission('customer:delete'), async (req: Request, res: Response) => {
   await deleteCustomer(req, res);
+});
+
+router.get('/tags/list', requirePermission('customer:read'), async (req: Request, res: Response) => {
+  await getTags(req, res);
+});
+
+router.post('/tags', requirePermission('customer:update'), async (req: Request, res: Response) => {
+  await createTag(req, res);
+});
+
+router.put('/tags/:id', requirePermission('customer:update'), async (req: Request, res: Response) => {
+  await updateTag(req, res);
+});
+
+router.delete('/tags/:id', requirePermission('customer:update'), async (req: Request, res: Response) => {
+  await deleteTag(req, res);
+});
+
+router.get('/tags/stats', requirePermission('customer:read'), async (req: Request, res: Response) => {
+  await getTagStats(req, res);
+});
+
+router.get('/:customerId/tags', requirePermission('customer:read'), async (req: Request, res: Response) => {
+  await getCustomerTags(req, res);
+});
+
+router.put('/:customerId/tags', requirePermission('customer:update'), async (req: Request, res: Response) => {
+  await updateCustomerTags(req, res);
 });
 
 router.get('/:customerId/consultation', requirePermission('consultation:read'), async (req: Request, res: Response) => {

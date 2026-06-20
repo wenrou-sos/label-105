@@ -2,13 +2,15 @@ import bcrypt from 'bcryptjs';
 import type {
   User, Customer, Consultation, Photo, Surgery, ConsentForm,
   Supply, PostOpVisit, Complication, Medicine, MedicineBatch,
-  TraceCode, Role, UserRole
+  TraceCode, Role, UserRole, CustomerTag, CustomerTagRelation
 } from '../../shared/types.js';
 
 interface Database {
   roles: Role[];
   users: User[];
   customers: Customer[];
+  customerTags: CustomerTag[];
+  customerTagRelations: CustomerTagRelation[];
   consultations: Consultation[];
   photos: Photo[];
   surgeries: Surgery[];
@@ -111,6 +113,7 @@ const initDb = async (): Promise<Database> => {
       contactAddress: '北京市朝阳区',
       photos: [],
       surgeries: [],
+      tagIds: [1, 2],
       createdBy: 2,
       createdAt: new Date('2024-03-01'),
     },
@@ -124,6 +127,7 @@ const initDb = async (): Promise<Database> => {
       contactAddress: '北京市海淀区',
       photos: [],
       surgeries: [],
+      tagIds: [1, 3],
       createdBy: 2,
       createdAt: new Date('2024-03-05'),
     },
@@ -137,9 +141,27 @@ const initDb = async (): Promise<Database> => {
       contactAddress: '北京市西城区',
       photos: [],
       surgeries: [],
+      tagIds: [2],
       createdBy: 2,
       createdAt: new Date('2024-03-10'),
     },
+  ];
+
+  const customerTags: CustomerTag[] = [
+    { id: 1, name: 'VIP', color: 'gold', description: '重要客户，享有优先服务', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
+    { id: 2, name: '高意向', color: 'red', description: '咨询后成交概率高', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
+    { id: 3, name: '复购客户', color: 'purple', description: '多次消费的老客户', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
+    { id: 4, name: '新客户', color: 'blue', description: '首次到店咨询', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
+    { id: 5, name: '待跟进', color: 'orange', description: '需要后续跟进联系', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
+    { id: 6, name: '投诉客户', color: 'gray', description: '有过投诉记录，需要特别处理', createdAt: new Date('2024-01-01'), updatedAt: new Date('2024-01-01') },
+  ];
+
+  const customerTagRelations: CustomerTagRelation[] = [
+    { id: 1, customerId: 1, tagId: 1, createdAt: new Date('2024-03-01') },
+    { id: 2, customerId: 1, tagId: 2, createdAt: new Date('2024-03-01') },
+    { id: 3, customerId: 2, tagId: 1, createdAt: new Date('2024-03-05') },
+    { id: 4, customerId: 2, tagId: 3, createdAt: new Date('2024-03-05') },
+    { id: 5, customerId: 3, tagId: 2, createdAt: new Date('2024-03-10') },
   ];
 
   const consultations: Consultation[] = [
@@ -438,6 +460,8 @@ const initDb = async (): Promise<Database> => {
     roles,
     users,
     customers,
+    customerTags,
+    customerTagRelations,
     consultations,
     photos,
     surgeries,
@@ -452,6 +476,8 @@ const initDb = async (): Promise<Database> => {
       roles: 4,
       users: 4,
       customers: 3,
+      customerTags: 6,
+      customerTagRelations: 5,
       consultations: 2,
       photos: 6,
       surgeries: 8,

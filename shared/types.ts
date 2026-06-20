@@ -22,6 +22,22 @@ export interface LoginResponse {
   user: Omit<User, 'createdAt'>;
 }
 
+export interface CustomerTag {
+  id: number;
+  name: string;
+  color: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CustomerTagRelation {
+  id: number;
+  customerId: number;
+  tagId: number;
+  createdAt: Date;
+}
+
 export interface Customer {
   id: number;
   name: string;
@@ -33,6 +49,8 @@ export interface Customer {
   consultation?: Consultation;
   photos: Photo[];
   surgeries: Surgery[];
+  tagIds: number[];
+  tags?: CustomerTag[];
   createdBy: number;
   createdAt: Date;
 }
